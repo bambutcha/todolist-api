@@ -18,6 +18,12 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
     }
     defer rows.Close()
 
+    mskLocation, err := time.LoadLocation("Europe/Moscow")
+    if err != nil {
+        http.Error(w, "Failed to load Moscow time zone: "+err.Error(), http.StatusInternalServerError)
+        return
+    }
+
     var tasks []models.Task
     for rows.Next() {
         var task models.Task
@@ -33,7 +39,8 @@ func GetTasks(w http.ResponseWriter, r *http.Request) {
         if len(createdAt) > 0 {
             parsedTime, err := time.Parse("2006-01-02 15:04:05", string(createdAt))
             if err == nil {
-                task.CreatedAt = &parsedTime
+                mskTime := parsedTime.In(mskLocation)
+                task.CreatedAt = &mskTime
             }
         }
 
